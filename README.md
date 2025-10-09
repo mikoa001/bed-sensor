@@ -1,4 +1,4 @@
-# HA-SleepGuard
+# Home Assistant - Sleep Guard
 
 An advanced bed occupancy sensor system for Home Assistant that creates aggressive alarms which won't stop until you physically get out of bed!
 
