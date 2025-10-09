@@ -1,0 +1,103 @@
+# Build artifacts and dependencies
+*.pyc
+__pycache__/
+*.so
+*.dylib
+*.dll
+
+# Arduino IDE
+*.hex
+*.elf
+*.eep
+*.lss
+*.map
+*.sym
+.build/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~.nib
+.Spotlight-V100
+.Trashes
+
+# IDE files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+nbproject/
+
+# Logs
+*.log
+
+# Config files with sensitive data
+config.h
+secrets.yaml
+!config.h.example
+
+# Test files
+test/
+tests/
+
+# Documentation builds
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+
+# Node modules (if using any tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# Backup files
+*.backup
+backup/
+
+# Local development files
+local/
+.local/
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+
+# Custom user configurations
+my_config/
+user_settings/

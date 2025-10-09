@@ -1,0 +1,137 @@
+// Configuration file for HA-SleepGuard Bed Sensor
+// Copy and modify these values to match your setup
+
+// ============================================
+// WiFi Configuration
+// ============================================
+const char* WIFI_SSID = "YOUR_WIFI_SSID";           // Your WiFi network name
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";   // Your WiFi password
+
+// ============================================
+// MQTT Broker Configuration
+// ============================================
+const char* MQTT_SERVER = "192.168.1.100";          // Your MQTT broker IP address
+const int MQTT_PORT = 1883;                          // MQTT broker port (usually 1883)
+const char* MQTT_USER = "YOUR_MQTT_USER";           // MQTT username (leave as "" if no auth)
+const char* MQTT_PASSWORD = "YOUR_MQTT_PASSWORD";   // MQTT password (leave as "" if no auth)
+const char* MQTT_CLIENT_ID = "bed_sensor";          // Unique client ID for this device
+
+// ============================================
+// MQTT Topics
+// ============================================
+const char* STATE_TOPIC = "homeassistant/binary_sensor/bed_sensor/state";
+const char* CONFIG_TOPIC = "homeassistant/binary_sensor/bed_sensor/config";
+const char* AVAILABILITY_TOPIC = "homeassistant/binary_sensor/bed_sensor/availability";
+
+// ============================================
+// Sensor Configuration
+// ============================================
+const int SENSOR_PIN = A0;                          // Analog pin for sensor (A0 on ESP8266)
+const int OCCUPIED_THRESHOLD = 512;                 // Threshold value (calibrate this!)
+                                                    // Values ABOVE this = bed occupied
+                                                    // Values BELOW this = bed empty
+
+// ============================================
+// Debounce Configuration
+// ============================================
+const unsigned long DEBOUNCE_DELAY = 3000;          // Debounce delay in milliseconds
+                                                    // Increase if getting false triggers
+                                                    // (3000 = 3 seconds)
+
+// ============================================
+// Device Information (for Home Assistant)
+// ============================================
+const char* DEVICE_NAME = "Bed Sensor";             // Device name shown in HA
+const char* DEVICE_MANUFACTURER = "HA-SleepGuard";  // Manufacturer name
+const char* DEVICE_MODEL = "ESP8266 Bed Sensor";    // Model name
+const char* UNIQUE_ID = "bed_sensor_001";           // Unique identifier (change if multiple sensors)
+
+// ============================================
+// Configuration Examples
+// ============================================
+
+/*
+Example 1: Basic Home WiFi Setup
+--------------------------------
+const char* WIFI_SSID = "MyHomeWiFi";
+const char* WIFI_PASSWORD = "MySecurePassword123";
+const char* MQTT_SERVER = "192.168.1.100";
+const char* MQTT_USER = "";  // No authentication
+const char* MQTT_PASSWORD = "";
+
+Example 2: Home Assistant with Mosquitto Addon
+----------------------------------------------
+const char* WIFI_SSID = "HomeNetwork";
+const char* WIFI_PASSWORD = "wifi_password_here";
+const char* MQTT_SERVER = "192.168.1.50";  // HA server IP
+const char* MQTT_USER = "mqtt_user";
+const char* MQTT_PASSWORD = "mqtt_pass";
+
+Example 3: Hidden WiFi Network
+-------------------------------
+const char* WIFI_SSID = "HiddenNetworkName";
+const char* WIFI_PASSWORD = "password123";
+// Note: You'll need to modify WiFi.begin() in main code for hidden SSID
+
+Example 4: Multiple Sensors Setup
+----------------------------------
+Sensor 1:
+const char* MQTT_CLIENT_ID = "bed_sensor_bedroom1";
+const char* UNIQUE_ID = "bed_sensor_bedroom1";
+const char* STATE_TOPIC = "homeassistant/binary_sensor/bed_sensor_bedroom1/state";
+const char* CONFIG_TOPIC = "homeassistant/binary_sensor/bed_sensor_bedroom1/config";
+
+Sensor 2:
+const char* MQTT_CLIENT_ID = "bed_sensor_bedroom2";
+const char* UNIQUE_ID = "bed_sensor_bedroom2";
+const char* STATE_TOPIC = "homeassistant/binary_sensor/bed_sensor_bedroom2/state";
+const char* CONFIG_TOPIC = "homeassistant/binary_sensor/bed_sensor_bedroom2/config";
+*/
+
+// ============================================
+// Calibration Guide
+// ============================================
+/*
+How to find your OCCUPIED_THRESHOLD:
+
+1. Upload the code with any threshold value (e.g., 512)
+2. Open Serial Monitor (Tools → Serial Monitor, 115200 baud)
+3. Observe "Sensor value: XXX" when bed is EMPTY
+   Example: Values around 50-150
+4. Get in bed and observe values when OCCUPIED
+   Example: Values around 600-800
+5. Calculate threshold:
+   OCCUPIED_THRESHOLD = (Empty_Average + Occupied_Average) / 2
+   Example: (100 + 700) / 2 = 400
+6. Update the code with your calculated threshold
+7. Re-upload and test
+
+Typical values:
+- FSR Sensor: 200-600 (depends on resistance)
+- Load Cell: Will need code modification for weight
+- Pressure Switch: Usually digital, needs different approach
+*/
+
+// ============================================
+// Advanced Configuration Options
+// ============================================
+
+// Uncomment and modify for advanced features:
+
+// Custom WiFi timeout (default uses blocking wait)
+// const int WIFI_TIMEOUT = 30000;  // 30 seconds
+
+// Custom MQTT reconnect delay
+// const int MQTT_RECONNECT_DELAY = 5000;  // 5 seconds
+
+// Sensor reading interval
+// const int SENSOR_READ_INTERVAL = 500;  // milliseconds
+
+// Enable/disable debug output
+// #define DEBUG_MODE  // Uncomment for verbose serial output
+
+// Use static IP instead of DHCP
+// IPAddress static_ip(192, 168, 1, 150);
+// IPAddress gateway(192, 168, 1, 1);
+// IPAddress subnet(255, 255, 255, 0);
+// IPAddress dns(192, 168, 1, 1);
