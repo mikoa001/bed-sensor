@@ -6,6 +6,8 @@ An advanced bed occupancy sensor system for Home Assistant that creates aggressi
 
 HA-SleepGuard uses an ESP8266 microcontroller with a pressure/weight sensor to detect bed occupancy. This data is sent to Home Assistant via MQTT, enabling sophisticated automations including aggressive alarms that require you to physically stand up from the bed to turn them off.
 
+**Beyond the Bedroom:** While designed for bed occupancy detection, this system is easily adaptable to monitor other furniture and areas - detect when someone sits on a sofa, steps on a rug, uses a doormat, or any other pressure-sensitive application you can imagine!
+
 ## Features
 
 - **Real-time bed occupancy detection** using pressure/weight sensors
@@ -214,6 +216,49 @@ Create multiple escalation levels:
 2. Medium alarm (sound + lights) - 2-5 minutes
 3. Aggressive alarm (sound + lights + all devices) - 5+ minutes
 4. Maximum alarm (everything at full intensity) - 10+ minutes
+
+## Beyond the Bedroom: Other Applications
+
+While HA-SleepGuard was designed for bed occupancy detection, the underlying technology is highly versatile and can be adapted for many other pressure-sensing applications:
+
+### Living Room & Furniture
+- **Sofa/Couch Detection**: Know when someone is sitting on the couch to trigger "movie mode" lighting, pause cleaning robots, or track family room usage
+- **Recliner Occupancy**: Automatically adjust room temperature or lighting when your favorite chair is occupied
+- **Office Chair**: Track desk time, remind you to take breaks, or turn on task lighting when you sit down
+
+### Entryways & Safety
+- **Doormat/Welcome Mat**: Get notified when someone arrives at your door, trigger entrance lighting, or log visitor activity
+- **Floor Mat Sensors**: Detect when someone steps into specific areas (nursery, elderly care monitoring, security zones)
+- **Bathroom Mat**: Turn on night lights automatically, monitor elderly family members, or track bathroom usage
+
+### Creative Applications
+- **Pet Bed Monitoring**: Know when your pet is sleeping or resting
+- **Workshop Stool**: Automatically enable tools and lighting when you sit at your workbench
+- **Porch/Patio Furniture**: Trigger outdoor lighting or music when someone sits outside
+- **Gaming Chair**: Log gaming sessions or switch scenes when you're ready to play
+
+### Implementation Tips for Other Applications
+The same ESP8266 code and Home Assistant setup can be reused with minimal changes:
+
+1. **Adjust Sensor Type**: Choose the appropriate sensor for your application (FSR for light pressure, load cell for precise weight)
+2. **Modify Topic Names**: Update MQTT topics to reflect the application (e.g., `sofa_sensor`, `doormat_sensor`)
+3. **Calibrate Threshold**: Each application will have different pressure requirements
+4. **Create Custom Automations**: Replace alarm automations with actions relevant to your use case
+
+**Example**: Converting to a Sofa Sensor
+```cpp
+// In ESP8266 code, update these lines:
+const char* mqtt_topic = "homeassistant/binary_sensor/sofa_sensor/state";
+const char* mqtt_discovery_topic = "homeassistant/binary_sensor/sofa_sensor/config";
+const char* device_name = "Sofa Occupancy Sensor";
+
+// In Home Assistant, create automations like:
+// - Turn on ambient lighting when someone sits down
+// - Pause robot vacuum when couch is occupied
+// - Start "movie mode" scene after 5 minutes of occupancy
+```
+
+The possibilities are endless - anywhere you need to detect presence or pressure, this system can be adapted to fit your needs!
 
 ## Troubleshooting
 
