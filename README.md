@@ -155,7 +155,7 @@ Install via Arduino IDE Library Manager:
    - Alarm sounds continuously while you're still in bed
    - After 2 minutes, alarm intensity escalates
    - Alarm only stops when you physically get out of bed (sensor detects empty bed)
-   Notice: The threshold between detecting and not detecting should be low, meaning it should be much easier to get a false detection of bed occupiency than a true detection to prioritize turning off the bed-state and therefore the attached alarm-state.
+Notice: The threshold between detecting and not detecting should be low, meaning it should be much easier to get a false detection of bed occupiency than a true detection to prioritize turning off the bed-state and therefore the attached alarm-state.
 
 ### Customizing Alarms
 
