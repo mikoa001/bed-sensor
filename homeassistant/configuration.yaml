@@ -1,0 +1,35 @@
+# Home Assistant Configuration for Bed Sensor
+
+# MQTT Sensor Configuration
+# The bed sensor will auto-discover via MQTT Discovery protocol
+# Make sure MQTT integration is configured in Home Assistant
+
+mqtt:
+  # Your MQTT broker configuration
+  broker: YOUR_MQTT_BROKER_IP
+  port: 1883
+  username: YOUR_MQTT_USER
+  password: YOUR_MQTT_PASSWORD
+  discovery: true
+  discovery_prefix: homeassistant
+
+# Binary Sensor (automatically discovered)
+# This will appear as binary_sensor.bed_sensor
+
+# Input Boolean for alarm control
+input_boolean:
+  aggressive_alarm_enabled:
+    name: Aggressive Alarm Enabled
+    icon: mdi:alarm
+
+# Helpers for alarm
+input_datetime:
+  alarm_time:
+    name: Alarm Time
+    has_date: false
+    has_time: true
+
+input_boolean:
+  alarm_active:
+    name: Alarm Active
+    icon: mdi:alarm-bell

@@ -1,0 +1,135 @@
+# Aggressive Alarm Automations for HA-SleepGuard
+# These automations create an alarm that won't stop until you get out of bed
+
+# Automation 1: Trigger alarm at set time
+- id: 'trigger_aggressive_alarm'
+  alias: 'Trigger Aggressive Alarm'
+  description: 'Start the aggressive alarm at the scheduled time'
+  trigger:
+    - platform: time
+      at: input_datetime.alarm_time
+  condition:
+    - condition: state
+      entity_id: input_boolean.aggressive_alarm_enabled
+      state: 'on'
+  action:
+    - service: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.alarm_active
+    - service: notify.notify
+      data:
+        message: 'Wake up! Alarm triggered!'
+        title: 'SleepGuard Alarm'
+
+# Automation 2: Sound alarm continuously while person is in bed
+- id: 'sound_alarm_while_in_bed'
+  alias: 'Sound Alarm While In Bed'
+  description: 'Keep sounding alarm until person gets out of bed'
+  trigger:
+    - platform: state
+      entity_id: input_boolean.alarm_active
+      to: 'on'
+    - platform: time_pattern
+      seconds: '/10'
+  condition:
+    - condition: state
+      entity_id: input_boolean.alarm_active
+      state: 'on'
+    - condition: state
+      entity_id: binary_sensor.bed_sensor
+      state: 'on'
+  action:
+    # Sound alarm - replace with your alarm method
+    # Examples: speaker announcement, siren, lights, etc.
+    - service: tts.google_translate_say
+      data:
+        entity_id: media_player.bedroom_speaker
+        message: 'Wake up! Get out of bed!'
+    # Flash lights
+    - service: light.turn_on
+      target:
+        entity_id: light.bedroom_light
+      data:
+        brightness: 255
+    - delay: '00:00:02'
+    - service: light.turn_off
+      target:
+        entity_id: light.bedroom_light
+    # You can also add:
+    # - Siren activation
+    # - Vibration devices
+    # - Smart home speaker announcements
+
+# Automation 3: Stop alarm when person gets out of bed
+- id: 'stop_alarm_out_of_bed'
+  alias: 'Stop Alarm When Out of Bed'
+  description: 'Turn off alarm when person physically gets out of bed'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.bed_sensor
+      from: 'on'
+      to: 'off'
+      for:
+        seconds: 5
+  condition:
+    - condition: state
+      entity_id: input_boolean.alarm_active
+      state: 'on'
+  action:
+    - service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.alarm_active
+    - service: notify.notify
+      data:
+        message: 'Good morning! Alarm stopped.'
+        title: 'SleepGuard Alarm'
+    # Turn off lights
+    - service: light.turn_off
+      target:
+        entity_id: light.bedroom_light
+
+# Automation 4: Manual alarm stop (emergency override)
+- id: 'manual_alarm_stop'
+  alias: 'Manual Alarm Stop'
+  description: 'Allow manual alarm stop via button/switch'
+  trigger:
+    - platform: state
+      entity_id: input_boolean.alarm_active
+      to: 'off'
+  action:
+    - service: notify.notify
+      data:
+        message: 'Alarm manually stopped'
+        title: 'SleepGuard Alarm'
+
+# Automation 5: Escalating alarm intensity
+- id: 'escalate_alarm_intensity'
+  alias: 'Escalate Alarm Intensity'
+  description: 'Increase alarm intensity if person stays in bed'
+  trigger:
+    - platform: state
+      entity_id: input_boolean.alarm_active
+      to: 'on'
+      for:
+        minutes: 2
+  condition:
+    - condition: state
+      entity_id: binary_sensor.bed_sensor
+      state: 'on'
+  action:
+    # Increase alarm volume or add more devices
+    - service: tts.google_translate_say
+      data:
+        entity_id: media_player.bedroom_speaker
+        message: 'WAKE UP NOW! You need to get out of bed!'
+    - service: media_player.volume_set
+      target:
+        entity_id: media_player.bedroom_speaker
+      data:
+        volume_level: 0.8
+    # Add more aggressive measures
+    - service: light.turn_on
+      target:
+        entity_id: light.all_lights
+      data:
+        brightness: 255
