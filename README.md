@@ -1,4 +1,4 @@
-# Home Assistant - Sleep Guard
+# SleepGuard
 
 An advanced bed occupancy sensor system for Home Assistant that creates aggressive alarms which won't stop until you physically get out of bed!
 
@@ -70,7 +70,20 @@ Install via Arduino IDE Library Manager:
 
 ## Installation
 
-### 1. ESP8266 Setup
+### 1. Hardware Setup
+
+1. **Setting Up the Sensor** (Options):
+   1. FSR (Force Sensitive Resistor)
+      - Placed under the mattress, on a plank or a plate where the wheight will be distributed on.
+   3. Load Cell with HX711 amplifier
+      - Suitible to be placed under each leg of the bed (require to have a good design and look, wires should not be visible).
+   5. Pressure mat/switch
+      - An alternative solution to FSR, which can cover a larger area, but might be more expensive and less convenient for the user.
+
+2. **Wiring**:
+   - Regardless of the sensor solution, there must be a connection between the sensor and the microcontroller. Based on which sensor solution there is, the wiring can vary. For instance, using load cells under each of the four legs of a typical bed, will require quite long cables regardless of the position of the microcontroller. However, the FSR solution might bring on a solution to this because there is no requirement of covering a large area of the bed, so that the microcontroller can be placed close to the sensor, and in that way, eliminating the need of advanced cable management to make the system more robust and safe againt kids. To dive into the wiring problem even further, the system requires power, so the system can either be powered by batteries or directly from an outlet. If the system would be powered by batteries, it would require to optimize the system to be power efficent and long lasting.
+
+### 2. ESP8266 Setup
 
 1. **Install Arduino IDE and ESP8266 Support**:
    - Install Arduino IDE from [arduino.cc](https://www.arduino.cc/en/software)
@@ -102,7 +115,7 @@ Install via Arduino IDE Library Manager:
    - Select correct port: Tools → Port
    - Click Upload
 
-### 2. Home Assistant Setup
+### 3. Home Assistant Setup
 
 1. **Enable MQTT Integration**:
    - Go to Settings → Devices & Services → Add Integration
@@ -119,7 +132,7 @@ Install via Arduino IDE Library Manager:
      - `light.bedroom_light` → your lights
      - Add your specific devices (sirens, smart plugs, etc.)
 
-### 3. Sensor Calibration
+### 4. Sensor Calibration
 
 1. **Monitor Serial Output**:
    - Open Serial Monitor in Arduino IDE (Tools → Serial Monitor)
