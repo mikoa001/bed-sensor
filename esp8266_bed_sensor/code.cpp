@@ -67,3 +67,41 @@ void printOnChange(const String& label) {
     lastLabel = label;
   }
 }
+
+void phoneWarning(String phoneSensorState, 
+                  String bedTimeState, 
+                  String& prev_bedTimeState, 
+                  const int GREEN_LIGHT_PIN, 
+                  const int RED_LIGHT_PIN, 
+                  const unsigned long time_treshold, 
+                  bool currentBedState,
+                  bool lastBedState
+                 ) {
+    if (bedTime == "ON" && prev_bedTime == "OFF") {
+        startTime_state = true;
+    } else {
+        startTime_state = false;
+    }
+    prev_bedTimeState = bedTimeState;
+
+    if (currentBedState && not lastBedState) { // not sure if "not" is a valid command
+        unusedTime_state = false;
+    } else if (not currentBedState && lastBedState) {
+        unusedTime_state = true;
+    }
+    lastBedState = currentBedState;
+    
+    unsigned long now = millis();
+    
+    if (bedTimeState == "ON") {
+        if (currentBedState && phoneSensorState == "ON" && startTime_state) {
+            unsigned long startTime = now;
+            startTime_state = false;
+        } else if ((currentBedState && phoneSensorState == "ON") || (currentBedState == false && phoneSensorState == "ON" && unusedTime < time_treshold)) {
+            unusedTime = now - startTime + useTime
+            useTime = now - startTime;
+        } else if (
+    } else {
+
+    }
+}
