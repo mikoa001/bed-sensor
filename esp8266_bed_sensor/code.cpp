@@ -68,28 +68,30 @@ void printOnChange(const String& label) {
   }
 }
 
-void phoneWarning(String phoneSensorState, 
+// PHONE WARNING
+
+void phoneWarning(String phoneSensorState, // Remember to fix so that our phoneSensorState only goes high if I am home (geolocation)
                   String bedTimeState, 
-                  String& prev_bedTimeState, 
+                  String& prev_bedTimeState,
+                  bool BedState,
+                  bool prev_BedState
                   const int GREEN_LIGHT_PIN, 
                   const int RED_LIGHT_PIN, 
                   const unsigned long time_treshold, 
-                  bool BedState,
-                  bool prev_BedState
                  ) {
     // The current time
-    unsigned long now = millis(); // you have to resolve the problem with the variable now being resetted (wraparound) to zero every 49.7 days.
+    // you have to resolve the problem with the variable now being resetted (wraparound) to zero every 49.7 days.
+    // Might resolve it by using timesteps and iterate the other time-varaiables with this timestep, may need to think more about it.
+    // In that case, you have to create that functionality in the main code and only run the code every time step, and for each time it is being ran, the time varaiables will increase.
+    unsigned long now = millis();
     
     // If there is a rising edge response of bed time
     if (bedTime == "ON" && prev_bedTime == "OFF") {
         firstStartTime_state = true;
-    // If there is a constat response of bed time
-    } else if (bedTime == prev_bedTime) {
-        firstStartTime_state = false;
     // If there is a falling edge response of bed time
-    } else if (bedTime == "OFF" && prev_bedTime == "ON")
-        firstStartTime_state = true;
-    }
+    } /* else if (bedTime == "OFF" && prev_bedTime == "ON") // this may not be necessary
+        firstStartTime_state = false;
+    } */
     prev_bedTimeState = bedTimeState;
 
     // If there is a rising edge response of the bed state
@@ -102,13 +104,20 @@ void phoneWarning(String phoneSensorState,
     prev_bedState = bedState;
 
     // If it is bed time
-    if (bedTimeState == "ON") {
-        // If I am laying in bed and I am on my phone, and it is the first time of the evening
+    if (bedTimeState == "ON") { 
+        // If I am laying in bed and I am on my phone, and it is the first time of my bed time
         if (bedState && phoneSensorState == "ON" && firstStartTime_state) {
             unsigned long firstStartTime = now;
             firstStartTime_state = false;
-        // If I am laying in bed and I am on my phone, or I am not on my phonenot laying in my bed and I am using 
-        } else if (bedState || not bedState && not firstStartTime_state) {
+        } 
+        // If i am on my phone, but it is not the first time of my bed time
+        // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
+        else if (!firstStartTime_state && phoneSensorState == "ON") {
+            // Write your code here
+        } 
+        // If i am not on my phone (to get accurate usage time)
+        else if (!firstStartTime_state && phoneSensorState == "OFF" && unusedTime < time_treshold) {
+        if (!firstStartTime_state && phoneSensorState == "ON") {
             if (phoneSensorState == "ON") {
                 // content
                 unusedTime;
@@ -117,10 +126,11 @@ void phoneWarning(String phoneSensorState,
                 unuseTime;
             }
         } else if (
-    // It is not bed time anymore2
+    // It is not bed time anymore
     } else {
         useTime = 0;
         unusedTime = 0;
     }
 }
+
 
