@@ -17,11 +17,11 @@ const char* ssid = "Telia-1D84C8";
 const char* password = "aPKkYr3d3PPGHWmJ";
 
 // MQTT Broker settings
-const char* mqtt_server = "192.168.1.118";     // IP of your Home Assistant device, found in the network settings in the HA UI
-const int mqtt_port = 1883;                         // Default MQTT port, change it if you have manually changed the port in the MQTT add-on (Mosquitto)
-const char* mqtt_user = "mqtt";                // The HA user (not person, there is a difference) where the mqtt comms will happen on, for limiting the access in case of an cyberattack
-const char* mqtt_password = "Hjju7ytfv4%%43ibpplpwf";   // A strong password for the mqtt user so that it is hard to hack
-const char* mqtt_client_id = "bed_sensor";          // the id_of this single client (the microcontroller)
+const char* mqtt_server = "192.168.1.118";             // IP of your Home Assistant device, found in the network settings in the HA UI
+const int mqtt_port = 1883;                            // Default MQTT port, change it if you have manually changed the port in the MQTT add-on (Mosquitto)
+const char* mqtt_user = "mqtt";                        // The HA user (not person, there is a difference) where the mqtt comms will happen on, for limiting the access in case of an cyberattack
+const char* mqtt_password = "Hjju7ytfv4%%43ibpplpwf";  // A strong password for the mqtt user so that it is hard to hack
+const char* mqtt_client_id = "bed_sensor";             // the id_of this single client (the microcontroller)
 
 // MQTT Topics
 const char* state_topic = "homeassistant/binary_sensor/bed_sensor/state";
@@ -55,6 +55,17 @@ PubSubClient client(espClient);
 
 // Initializing the buzzer struct with the BUZZER_PIN
 Buzzer buzzer(BUZZER_PIN);
+
+// Defining code.h relevant variables
+String prev_bedTimeState = "OFF";
+String prev_phoneSensorState = "OFF";
+bool firstStartTime_state = true;  // Start in a ready state
+unsigned long now = 0;
+unsigned long firstStartTime = 0;
+unsigned long midStartTime = 0;
+unsigned long useTime = 0;
+unsigned long unusedTime = 0;
+unsigned long elapsedTime = 0;
 
 // MQTT callback for subscribed topics
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -154,9 +165,10 @@ void publishDiscoveryConfig() {
 }
 
 void loop() {
-  if (!client.connected())
+  if (!client.connected()) {
     reconnect();
-  
+  }
+
   client.loop();
 
   // Read sensor value
@@ -195,10 +207,18 @@ void loop() {
     digitalWrite(GREEN_LIGHT_PIN, LOW);
   }
 
-  if (/* some event triggers buzzing */) {
-        buzzer.buzz(200, 300, 4000); // 200ms on, 300ms off, for 4 seconds
-    }
-    buzzer.update(); // Always call this in loop
+  if (/* some event triggers buzzing */ 1) {
+    buzzer.buzz(200, 300, 4000);  // 200ms on, 300ms off, for 4 seconds
+  }
+  buzzer.update();  // Always call this in loop
 
-  delay(100); // determines the frequency of the code
+  void phoneWarning(String phoneSensorState,
+                    String bedTimeState,
+                    String homeState,
+                    bool bedState,
+                    const int GREEN_LIGHT_PIN,
+                    const int RED_LIGHT_PIN,
+                    const unsigned long time_treshold);
+
+  delay(100);  // determines the frequency of the code
 }

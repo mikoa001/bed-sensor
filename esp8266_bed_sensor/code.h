@@ -2,21 +2,15 @@
 #include <Arduino.h>
 #include <limits.h>
 
-String bedTimeState = "OFF";
-String prev_bedTimeState =="OFF";
-String prev_phoneSensorState = "OFF";
-bool firstStartTime_state = false;
-bool midStartTime_state = false;
-unsigned long firstStartTime = 0;
-unsigned long midStartTime = 0;
-unsigned long prev_midStartTime = 0;
-unsigned long useTime = 0;
-unsigned long unusedTime = 0;
-unsigned long now = 0;
-unsigned long prev_now = 0;
-unsigned long interval = 100;
-unsigned long elapsedTime = 0;
-
+extern String prev_bedTimeState;
+extern String prev_phoneSensorState;
+extern bool firstStartTime_state;
+extern unsigned long now;
+extern unsigned long firstStartTime;
+extern unsigned long midStartTime;
+extern unsigned long useTime;
+extern unsigned long unusedTime;
+extern unsigned long elapsedTime;
 
 // BUZZER
 
@@ -39,6 +33,12 @@ void printOnChange(const String& label, const String& currentValue);
 void printOnChange(const String& label, int currentValue);
 void printOnChange(const String& label);
 
-void phoneWarning(String phoneSensorState, int LIGHT_PIN);
-
+void phoneWarning(String phoneSensorState,
+                  String bedTimeState,
+                  String homeState,
+                  bool bedState,
+                  const int GREEN_LIGHT_PIN, 
+                  const int RED_LIGHT_PIN, 
+                  const unsigned long time_treshold
+                 );
 
