@@ -74,34 +74,53 @@ void phoneWarning(String phoneSensorState,
                   const int GREEN_LIGHT_PIN, 
                   const int RED_LIGHT_PIN, 
                   const unsigned long time_treshold, 
-                  bool currentBedState,
-                  bool lastBedState
+                  bool BedState,
+                  bool prev_BedState
                  ) {
+    // The current time
+    unsigned long now = millis(); // you have to resolve the problem with the variable now being resetted (wraparound) to zero every 49.7 days.
+    
+    // If there is a rising edge response of bed time
     if (bedTime == "ON" && prev_bedTime == "OFF") {
-        startTime_state = true;
-    } else {
-        startTime_state = false;
+        firstStartTime_state = true;
+    // If there is a constat response of bed time
+    } else if (bedTime == prev_bedTime) {
+        firstStartTime_state = false;
+    // If there is a falling edge response of bed time
+    } else if (bedTime == "OFF" && prev_bedTime == "ON")
+        firstStartTime_state = true;
     }
     prev_bedTimeState = bedTimeState;
 
-    if (currentBedState && not lastBedState) { // not sure if "not" is a valid command
-        unusedTime_state = false;
-    } else if (not currentBedState && lastBedState) {
-        unusedTime_state = true;
+    // If there is a rising edge response of the bed state
+    if (bedState == true && prev_bedState == false) {
+        midStartTime_state = false;
+    // If there is a falling edge response of the bed state
+    } else if (bedState == false && prev_bedState == true) {
+        midStartTime_state = true;
     }
-    lastBedState = currentBedState;
-    
-    unsigned long now = millis();
-    
-    if (bedTimeState == "ON") {
-        if (currentBedState && phoneSensorState == "ON" && startTime_state) {
-            unsigned long startTime = now;
-            startTime_state = false;
-        } else if ((currentBedState && phoneSensorState == "ON") || (currentBedState == false && phoneSensorState == "ON" && unusedTime < time_treshold)) {
-            unusedTime = now - startTime + useTime
-            useTime = now - startTime;
-        } else if (
-    } else {
+    prev_bedState = bedState;
 
+    // If it is bed time
+    if (bedTimeState == "ON") {
+        // If I am laying in bed and I am on my phone, and it is the first time of the evening
+        if (bedState && phoneSensorState == "ON" && firstStartTime_state) {
+            unsigned long firstStartTime = now;
+            firstStartTime_state = false;
+        // If I am laying in bed and I am on my phone, or I am not on my phonenot laying in my bed and I am using 
+        } else if (bedState || not bedState && not firstStartTime_state) {
+            if (phoneSensorState == "ON") {
+                // content
+                unusedTime;
+            } else if (phoneSensorState == "OFF" && unusedTime < time_treshold) {
+                // content
+                unuseTime;
+            }
+        } else if (
+    // It is not bed time anymore2
+    } else {
+        useTime = 0;
+        unusedTime = 0;
     }
 }
+
