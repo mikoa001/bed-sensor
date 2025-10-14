@@ -1,7 +1,12 @@
 #pragma once
-
 #include <Arduino.h>
 #include <limits.h>
+
+String bedTimeState = "OFF"
+String prev_bedTimeState == "OFF";
+bool startTime_state = false;
+unsigned long useTime = 0;
+unsigned long unusedTime = 0;
 
 // BUZZER
 
@@ -23,3 +28,5 @@ private:
 void printOnChange(const String& label, const String& currentValue);
 void printOnChange(const String& label, int currentValue);
 void printOnChange(const String& label);
+
+void phoneWarning(String phoneSensorState, int LIGHT_PIN);
