@@ -2,11 +2,20 @@
 #include <Arduino.h>
 #include <limits.h>
 
-String bedTimeState = "OFF"
-String prev_bedTimeState == "OFF";
-bool startTime_state = false;
+String bedTimeState = "OFF";
+String prev_bedTimeState =="OFF";
+String prev_phoneSensorState = "OFF";
+bool firstStartTime_state = false;
+bool midStartTime_state = false;
+unsigned long firstStartTime = 0;
+unsigned long midStartTime = 0;
+unsigned long prev_midStartTime = 0;
 unsigned long useTime = 0;
 unsigned long unusedTime = 0;
+unsigned long now = 0;
+unsigned long prev_now = 0;
+unsignet long interval = 100;
+
 
 // BUZZER
 
@@ -30,3 +39,4 @@ void printOnChange(const String& label, int currentValue);
 void printOnChange(const String& label);
 
 void phoneWarning(String phoneSensorState, int LIGHT_PIN);
+
