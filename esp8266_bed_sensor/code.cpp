@@ -71,6 +71,7 @@ void printOnChange(const String& label) {
 // PHONE WARNING
 
 void phoneWarning(String phoneSensorState, // Remember to fix so that our phoneSensorState only goes high if I am home (geolocation)
+                  String& prev_phoneSensorState,
                   String bedTimeState, 
                   String& prev_bedTimeState,
                   bool BedState,
@@ -83,54 +84,60 @@ void phoneWarning(String phoneSensorState, // Remember to fix so that our phoneS
     // you have to resolve the problem with the variable now being resetted (wraparound) to zero every 49.7 days.
     // Might resolve it by using timesteps and iterate the other time-varaiables with this timestep, may need to think more about it.
     // In that case, you have to create that functionality in the main code and only run the code every time step, and for each time it is being ran, the time varaiables will increase.
-    unsigned long now = millis();
+    now = millis();
     
     // If there is a rising edge response of bed time
     if (bedTime == "ON" && prev_bedTime == "OFF") {
         firstStartTime_state = true;
-    // If there is a falling edge response of bed time
-    } /* else if (bedTime == "OFF" && prev_bedTime == "ON") // this may not be necessary
-        firstStartTime_state = false;
-    } */
-    prev_bedTimeState = bedTimeState;
+    } prev_bedTimeState = bedTimeState;
 
-    // If there is a rising edge response of the bed state
-    if (bedState == true && prev_bedState == false) {
-        midStartTime_state = false;
-    // If there is a falling edge response of the bed state
-    } else if (bedState == false && prev_bedState == true) {
+
+    // If there is a rising edge response of the phone state
+    if (phoneSensorState == "ON" && prev_phoneSensorState == "OFF") {
         midStartTime_state = true;
+    } 
+    // If there is a falling edge response of the phone state
+    else if (phoneSensorState == "OFF" && prev_phoneSensorState == "ON") {
+        midStartTime = now;
     }
-    prev_bedState = bedState;
+    // If there is a constant "OFF" response of the phone state
+    else if (phoneSensorState == "ON" && prev_phoneSensorState == "ON") {
+        prev_midStartTime = midStartTime; // remove?
+        midStartTime_state = false;
+    } prev_phoneSensorState = phoneSensorState;
 
     // If it is bed time
     if (bedTimeState == "ON") { 
         // If I am laying in bed and I am on my phone, and it is the first time of my bed time
         if (bedState && phoneSensorState == "ON" && firstStartTime_state) {
-            unsigned long firstStartTime = now;
+            firstStartTime = now;
             firstStartTime_state = false;
         } 
         // If i am on my phone, but it is not the first time of my bed time
         // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
-        else if (!firstStartTime_state && phoneSensorState == "ON") {
-            // Write your code here
-        } 
-        // If i am not on my phone (to get accurate usage time)
-        else if (!firstStartTime_state && phoneSensorState == "OFF" && unusedTime < time_treshold) {
         if (!firstStartTime_state && phoneSensorState == "ON") {
-            if (phoneSensorState == "ON") {
-                // content
-                unusedTime;
-            } else if (phoneSensorState == "OFF" && unusedTime < time_treshold) {
-                // content
-                unuseTime;
-            }
-        } else if (
+            useTime = now - firstStarttime - unusedTime;
+        } 
+        else if (!firstStartTime_state && !midStartTime_state) { // happens in only one scan
+            timeAdjust += unusedTime;
+        }
+        // If i am not on my phone (to get accurate usage time)
+        else if (!firstStartTime_state && midStartTime_state && unusedTime < time_treshold) {
+            unusedTime = now - midStartTime + timeAdjust
+        } 
+        // None of the qualifiactions above has been met, i.e. unusedTime is bigger than time_threshold 
+        else {
+            useTime = 0;
+            unusedTime = 0;
+            timeAdjust = 0;
+        }
     // It is not bed time anymore
-    } else {
+    } else { // Remember to implement so that this else gets triggered after a certian amount of unused time (time_treshold)
         useTime = 0;
         unusedTime = 0;
+        timeAdjust = 0;
     }
 }
+
 
 
