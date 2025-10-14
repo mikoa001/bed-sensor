@@ -14,7 +14,8 @@ unsigned long useTime = 0;
 unsigned long unusedTime = 0;
 unsigned long now = 0;
 unsigned long prev_now = 0;
-unsignet long interval = 100;
+unsigned long interval = 100;
+unsigned long elapsedTime = 0;
 
 
 // BUZZER
@@ -39,4 +40,5 @@ void printOnChange(const String& label, int currentValue);
 void printOnChange(const String& label);
 
 void phoneWarning(String phoneSensorState, int LIGHT_PIN);
+
 
