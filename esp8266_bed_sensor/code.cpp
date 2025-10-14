@@ -81,74 +81,65 @@ void phoneWarning(String phoneSensorState, // Remember to fix so that our phoneS
                   const unsigned long time_treshold, 
                  ) {
     // The current time
-    // you have to resolve the problem with the variable now being resetted (wraparound) to zero every 49.7 days.
-    // Might resolve it by using timesteps and iterate the other time-varaiables with this timestep, may need to think more about it.
-    // In that case, you have to create that functionality in the main code and only run the code every time step, and for each time it is being ran, the time varaiables will increase.
     now = millis();
     
     // If there is a rising edge response of bed time
     if (bedTimeState == "ON" && prev_bedTimeState == "OFF") {
         firstStartTime_state = true;
-    } prev_bedTimeState = bedTimeState;
-    // If there is a rising edge response of the phone state
-    if (phoneSensorState == "ON" && prev_phoneSensorState == "OFF") {
-        if (!firstStartTime_state) { // Phone was picked up during bed time
-            unusedTime += now - midStartTime; // Add the time it was unused
-        } 
-    }
-    // If there is a falling edge response of the phone state
-    else if (phoneSensorState == "OFF" && prev_phoneSensorState == "ON") {
-        midStartTime = now;
-    }
-    // If there is a constant "OFF" response of the phone state
-    else if (phoneSensorState == "ON" && prev_phoneSensorState == "ON") {
-        prev_midStartTime = midStartTime; // remove?
-        midStartTime_state = false;
-    } prev_phoneSensorState = phoneSensorState;
-
+    } 
+    prev_bedTimeState = bedTimeState;
+    
     // If it is bed time
     if (bedTimeState == "ON") { 
         // If I am laying in bed and I am on my phone, and it is the first time of my bed time
         if (bedState && phoneSensorState == "ON" && firstStartTime_state) {
-            unusedTime = 0; // Is this necessary?
+            // Initializing
+            unusedTime = 0;
+            useTime = 0;
             firstStartTime = now;
             firstStartTime_state = false;
         } 
-        // If bed time has started and we are tracking time
+        // If the initialization have previously runned
         if (!firstStartTime_state) {
+            // ===================================PHONE==============================================
+            // If there is a rising edge response of the phone state
+            if (phoneSensorState == "ON" && prev_phoneSensorState == "OFF") {
+                if (midStartTime != 0) {
+                    unusedTime += now - midStartTime; // Add the time it was unused
+                }
+            }
+            // If there is a falling edge response of the phone state
+            else if (phoneSensorState == "OFF" && prev_phoneSensorState == "ON") {
+                midStartTime = now;
+            }
+            prev_phoneSensorState = phoneSensorState;
+            // ===================================PHONE==============================================
+            
+            // If i am on my phone, but it is not the first time of my bed time
+            // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
+            if (phoneSensorState == "ON") {
+                useTime = elapsedTime - unusedTime;
+            } 
+            // None of the qualifiactions above has been met, i.e. the phone have not been used for a long enough period 
+            if (phoneSensorState == "OFF" && (now - midStartTime >= time_treshold)) {
+                firstStartTime_state = true;
+                useTime = 0;
+                unusedTime = 0;
+            }
             // Calculate total time on phone
             elapsedTime = now - firstStartTime;
-            if (elapsedTime >= unusedTime) {
-                useTime = elapsedTime - unusedTime;
-            } else {
-                // This case handles the millis() wraparound
-                useTime = (ULONG_MAX - firstStartTime + now) - unusedTime;
-            }
-        // If i am on my phone, but it is not the first time of my bed time
-        // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
-        if (!firstStartTime_state && phoneSensorState == "ON") {
-            useTime = now - firstStarttime - unusedTime;
-        } 
-        else if (!firstStartTime_state && !midStartTime_state) { // happens in only one scan
-            timeAdjust += unusedTime;
+            useTime = elapsedTime - unusedTime;
         }
-        // If i am not on my phone (to get accurate usage time)
-        else if (!firstStartTime_state && midStartTime_state && unusedTime < time_treshold) {
-            unusedTime = now - midStartTime
-        } 
-        // None of the qualifiactions above has been met, i.e. unusedTime is bigger than time_threshold 
-        else {
-            useTime = 0;
-            unusedTime = 0;
-            timeAdjust = 0;
-        }
+    }
     // It is not bed time anymore
-    } else { // Remember to implement so that this else gets triggered after a certian amount of unused time (time_treshold)
+    else {
+        firstStartTime_state = true;
         useTime = 0;
         unusedTime = 0;
-        timeAdjust = 0;
+        return;
     }
 }
+
 
 
 
