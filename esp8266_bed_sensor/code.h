@@ -33,12 +33,5 @@ void printOnChange(const String& label, const String& currentValue);
 void printOnChange(const String& label, int currentValue);
 void printOnChange(const String& label);
 
-void phoneWarning(String phoneSensorState,
-                  String bedTimeState,
-                  String homeState,
-                  bool bedState,
-                  const int GREEN_LIGHT_PIN, 
-                  const int RED_LIGHT_PIN, 
-                  const unsigned long time_treshold
-                 );
+bool phoneWarning(String phoneSensorState, String bedTimeState, String homeState, bool bedState, const unsigned long unused_time_treshold, const unsigned long use_time_treshold);
 

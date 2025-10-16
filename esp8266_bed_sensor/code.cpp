@@ -71,7 +71,7 @@ void printOnChange(const String& label) {
 
 // PHONE WARNING
 
-void phoneWarning(String phoneSensorState, String bedTimeState, String homeState, bool bedState, const int GREEN_LIGHT_PIN, const int RED_LIGHT_PIN, const unsigned long time_treshold) {
+bool phoneWarning(String phoneSensorState, String bedTimeState, String homeState, bool bedState,const unsigned long unusedTime_treshold, const unsigned long useTime_treshold) {
   // The current time
   now = millis();
 
@@ -81,7 +81,7 @@ void phoneWarning(String phoneSensorState, String bedTimeState, String homeState
   }
   prev_bedTimeState = bedTimeState;
 
-  // If it is bed time
+  // If it is bed time and I am home
   if (bedTimeState == "ON" && homeState == "HOME") {
     // If I am laying in bed and I am on my phone, and it is the first time of my bed time
     if (bedState && phoneSensorState == "ON" && firstStartTime_state) {
@@ -93,9 +93,11 @@ void phoneWarning(String phoneSensorState, String bedTimeState, String homeState
     }
     // If the initialization have previously runned
     if (!firstStartTime_state) {
-      // ===================================PHONE==============================================
+      // Calculate the elapsed time from the triggered start of the current phone session
+      elapsedTime = now - firstStartTime;
       // If there is a rising edge response of the phone state
       if (phoneSensorState == "ON" && prev_phoneSensorState == "OFF") {
+        // If we use the phone the very first time, we need to ignore the midStartTime initialization
         if (midStartTime != 0) {
           unusedTime += now - midStartTime;  // Add the time it was unused
         }
@@ -105,22 +107,24 @@ void phoneWarning(String phoneSensorState, String bedTimeState, String homeState
         midStartTime = now;
       }
       prev_phoneSensorState = phoneSensorState;
-      // ===================================PHONE==============================================
 
       // If i am on my phone, but it is not the first time of my bed time
       // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
       if (phoneSensorState == "ON") {
         useTime = elapsedTime - unusedTime;
       }
-      // None of the qualifiactions above has been met, i.e. the phone have not been used for a long enough period
-      if (phoneSensorState == "OFF" && (now - midStartTime >= time_treshold)) {
+
+      // The phone have not been used for a long enough period that the whole phone restriction can be resetted
+      else if (phoneSensorState == "OFF" && (now - midStartTime >= unusedTime_treshold)) {
         firstStartTime_state = true;
         useTime = 0;
         unusedTime = 0;
       }
-      // Calculate total time on phone
-      elapsedTime = now - firstStartTime;
-      useTime = elapsedTime - unusedTime;
+      if (phoneSensorState == "ON" && (useTime >= useTime_treshold)) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
   // It is not bed time anymore or I am not home
@@ -128,6 +132,6 @@ void phoneWarning(String phoneSensorState, String bedTimeState, String homeState
     firstStartTime_state = true;
     useTime = 0;
     unusedTime = 0;
-    return;
+    return true;
   }
 }

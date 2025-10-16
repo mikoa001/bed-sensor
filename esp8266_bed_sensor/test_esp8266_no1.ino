@@ -30,16 +30,21 @@ const char* availability_topic = "homeassistant/binary_sensor/bed_sensor/availab
 
 // Topic for monitoring HA entity state
 const char* phone_sensor_state_topic = "homeassistant/binary_sensor/mikael_sin_mobil_interactive/state";
-
+const char* bed_time_state_topic = "homeassistant/binary_sensor/bedTimeState";
+const char* home_state_topic = "homeassistant/device_tracker/mikael_sin_mobil";
 // Store the state of the monitored entity
 String phoneSensorState = "OFF";
+String bedTimeState = "OFF";
+String homeState = "NOT_HOME";
+
+
 
 // Defining pins
 const int SENSOR_PIN = A0;
 const int BUTTON_PIN = 15;
 const int GREEN_LIGHT_PIN = 14;
 const int RED_LIGHT_PIN = 12;
-const int BUZZER_PIN = 5;
+const int BUZZER_PIN = 16; // 5?
 
 // Sensor threshold - adjust based on your sensor
 const int OCCUPIED_THRESHOLD = 250;  // Value when bed is occupied (0-1023): 0 means alot of pressure, 1023 means absolutely no pressure at all.
@@ -54,7 +59,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 // Initializing the buzzer struct with the BUZZER_PIN
-Buzzer buzzer(BUZZER_PIN);
+// Buzzer buzzer(BUZZER_PIN);
 
 // Defining code.h relevant variables
 String prev_bedTimeState = "OFF";
@@ -80,6 +85,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     phoneSensorState = String(message);
     // Serial.print("Received state for mikael_sin_mobil_interactive: "); // for debugging
     // Serial.println(phoneSensorState); // for debugging
+  } 
+  else if (topicStr == bed_time_state_topic) {
+    bedTimeState = String(message);
+  }
+  else if (topicStr == home_state_topic) {
+    homeState = String(message);
   }
 }
 
@@ -128,6 +139,14 @@ void reconnect() {
       delay(1000);
       publishDiscoveryConfig();
       // Subscribe to the monitored entity's state topic
+      client.subscribe(bed_time_state_topic);
+      Serial.print("Subscribed to phone sensor topic: ");
+      Serial.println(bed_time_state_topic);
+      // ------------------------------------------------
+      client.subscribe(home_state_topic);
+      Serial.print("Subscribed to phone sensor topic: ");
+      Serial.println(home_state_topic);
+      // ------------------------------------------------
       client.subscribe(phone_sensor_state_topic);
       Serial.print("Subscribed to phone sensor topic: ");
       Serial.println(phone_sensor_state_topic);
@@ -178,8 +197,9 @@ void loop() {
   bool bedOccupied = sensorValue <= OCCUPIED_THRESHOLD;
 
   // printOnChange("Bed sensor state: ", bedOccupied); // for debugging
-  // printOnChange("Phone interactive: ", phoneSensorState); // for debugging
-
+  printOnChange("Phone interactive: ", phoneSensorState); // for debugging
+  printOnChange("bed time: ", bedTimeState); // for debugging
+  printOnChange("home state: ", homeState); // for debugging
   // Debounce logic
   if (bedOccupied != currentBedState) {
     lastDebounceTime = millis();
@@ -200,25 +220,21 @@ void loop() {
   }
 
   if (phoneSensorState == "ON") {
-    // printOnChange("Turning on green (D5)"); // for debugging
+    printOnChange("Turning on green (D5)"); // for debugging
     digitalWrite(GREEN_LIGHT_PIN, HIGH);
   } else {
-    // printOnChange("Turning off green (D5)"); // for debugging
+    printOnChange("Turning off green (D5)"); // for debugging
     digitalWrite(GREEN_LIGHT_PIN, LOW);
   }
 
-  if (/* some event triggers buzzing */ 1) {
-    buzzer.buzz(200, 300, 4000);  // 200ms on, 300ms off, for 4 seconds
+  // The buzzer is wrong, fix it!
+  if (phoneWarning(phoneSensorState, bedTimeState, homeState, currentBedState, 36000000, 5000)) {
+    // Make the buzzer sequence start, as long as the if-sentence is true
+    digitalWrite(RED_LIGHT_PIN, HIGH);
+  } else {
+    // Reset the buzzer settings so that it can start correctly next time it is being called
+    digitalWrite(RED_LIGHT_PIN, LOW);
   }
-  buzzer.update();  // Always call this in loop
 
-  void phoneWarning(String phoneSensorState,
-                    String bedTimeState,
-                    String homeState,
-                    bool bedState,
-                    const int GREEN_LIGHT_PIN,
-                    const int RED_LIGHT_PIN,
-                    const unsigned long time_treshold);
-
-  delay(100);  // determines the frequency of the code
+  delay(100);  // determines the frequency of the whole code
 }
