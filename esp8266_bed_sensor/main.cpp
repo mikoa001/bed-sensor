@@ -346,5 +346,7 @@ void loop() {
   // Update buzzer state machine (non-blocking)
   updateBuzzer();
 
-  delay(100);  // determines the frequency of the whole code
+  // determines the frequency of the whole code
+  delay(100); // For some reason, the code goes poopo if the delay is 0, the mqtt connetion fails in a constant loop with small gaps of connection.
+
 }
