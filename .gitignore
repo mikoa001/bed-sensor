@@ -54,7 +54,7 @@ nbproject/
 *.log
 
 # Config files with sensitive data
-secrets.h
+/src/secrets.h
 secrets.yaml
 !config.h.example
 
