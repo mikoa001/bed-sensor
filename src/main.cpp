@@ -165,6 +165,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (topicStr == phone_sensor_state_topic) phoneSensorState = String(message);
   else if (topicStr == bed_time_state_topic) bedTimeState = String(message);
   else if (topicStr == home_state_topic) homeState = String(message);
+  else if (topicStr == use_time_treshold_topic) useTime_treshold = message.toInt();
+  else if (topicStr == unused_time_treshold_topic) unusedTime_treshold = message.toInt();
 }
 
 void setup_wifi() {
@@ -275,7 +277,7 @@ void publishDiscoveryConfig() {
   }
 
   // 4. Raw Pressure Sensor
-  String config_pressure = "{\"name\":\"Bed Sensor Raw Pressure\",\"state_topic\":\"" + String(pressure_state_topic) + "\",\"availability_topic\":\"" + String(availability_topic) + "\",\"icon\":\"mdi:gauge\",\"unique_id\":\"bed_sensor_001_pressure\"," + device_json + "}";
+  String config_pressure = "{\"name\":\"Bed Sensor Raw Pressure\",\"state_topic\":\"" + String(pressure_state_topic) + "\",\"availability_topic\":\"" + String(availability_topic) + "\",\"icon\":\"mdi:gauge\",\"unit_of_measurement\":\"\",\"state_class\":\"measurement\",\"unique_id\":\"bed_sensor_001_pressure\"," + device_json + "}";
   if (!client.publish("homeassistant/sensor/bed_sensor_pressure/config", config_pressure.c_str(), true)) {
     Serial.println("Failed to publish Pressure Sensor discovery.");
   }
@@ -304,6 +306,10 @@ void setup() {
   // For most ESP8266 dev boards the built-in LEDs is active LOW, so HIGH = OFF:
   digitalWrite(LED_BUILTIN_1, HIGH);
   digitalWrite(LED_BUILTIN_2, HIGH);
+
+  // Convert input from the entities with time thresholds, from minutes to milliseconds
+  useTime_treshold *= 60000;
+  unusedTime_treshold *= 60000;
 
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
@@ -400,7 +406,7 @@ void loop() {
     digitalWrite(LED_BUILTIN_1, HIGH);
   } */
   // Check if phone warning conditions are met
-  if (phoneWarningTracker.check(phoneSensorState, bedTimeState, homeState, currentBedState, 600000, 900000)) {
+  if (phoneWarningTracker.check(phoneSensorState, bedTimeState, homeState, currentBedState, useTime_treshold, unusedTime_treshold)) {
     if (!buzzerRequested) {
       buzzerRequested = true;
       startBuzzerSequence();
