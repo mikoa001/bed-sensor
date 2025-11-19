@@ -24,17 +24,24 @@ struct PhoneWarningTracker {
   unsigned long useTime = 0;
   unsigned long elapsedTime = 0;
   unsigned long unusedTime = 0;
+  bool alarmTriggered = false;
+  bool graceActive = false;
+  unsigned long graceStartTime = 0;
 
   bool check(const String& phoneSensorState, 
              const String& bedTimeState, 
              const String& homeState, 
              bool bedState, 
+             const unsigned long useTime_treshold,
              const unsigned long unusedTime_treshold, 
-             const unsigned long useTime_treshold
-            ) {
+             const unsigned long graceTime_treshold) {
+
     // If there is a rising edge response of bed time
     if (bedTimeState == "ON" && prev_bedTimeState == "OFF") {
       firstStartTime_state = true;
+      alarmTriggered = false;
+      graceActive = false;
+      graceStartTime = 0;
     }
     prev_bedTimeState = bedTimeState;
 
@@ -50,12 +57,17 @@ struct PhoneWarningTracker {
       if (!firstStartTime_state) {
         // Calculate the elapsed time from the triggered start of the current phone session
         elapsedTime = now - firstStartTime;
-        // If there is a rising edge response of the phone state
+        // If there is a rising edge response of the phone state, need to ignore the midStartTime initialization
         if (phoneSensorState == "ON" && prev_phoneSensorState == "OFF") {
           // If we use the phone the very first time, we need to ignore the midStartTime initialization
           if (midStartTime != 0) {
-            unusedTime += now - midStartTime;  // Add the time it was unused
-            midStartTime = 0; // consumed
+            // If we are in a grace period, check if the gap time have exceeded the grace
+            unusedTime += now - midStartTime;
+            if (alarmTriggered && (now - midStartTime) < unusedTime_treshold) {
+              graceActive = true;
+              graceStartTime = now;
+            }
+            midStartTime = 0;
           }
         }
         // If there is a falling edge response of the phone state
@@ -63,36 +75,56 @@ struct PhoneWarningTracker {
           midStartTime = now;
         }
         prev_phoneSensorState = phoneSensorState;
-
         // If i am on my phone, but it is not the first time of my bed time
         // Maybe have some debounce for when I am not in bed? Like, I am going to game all night but I triggered the state and still use the phone???
         if (phoneSensorState == "ON") {
           useTime = elapsedTime - unusedTime;
         }
-
-        // The phone have not been used for a long enough period that the whole phone restriction can be resetted
-        else if (now - midStartTime >= unusedTime_treshold) {
+        // The phone have not been used consequtively for a long enough period, ignoring total unused time, reset everything
+        else if (midStartTime != 0 && (now - midStartTime) >= unusedTime_treshold) {
           firstStartTime_state = true;
           firstStartTime = 0;
           midStartTime = 0;
           useTime = 0;
           elapsedTime = 0;
           unusedTime = 0;
-        }
-        if (phoneSensorState == "ON" && (useTime >= useTime_treshold)) {
-          return true;
-        } else {
+          alarmTriggered = false;
+          graceActive = false;
+          graceStartTime = 0;
           return false;
         }
+
+        // Grace handling
+        if (graceActive) {
+          if (now - graceStartTime < graceTime_treshold) {
+            return false; // suppress alarm during grace
+          } else {
+            graceActive = false; // grace expired
+          }
+        }
+
+        // Check if the use time have exceeded the treshold and return true if so
+        if (phoneSensorState == "ON" && useTime >= useTime_treshold) {
+          alarmTriggered = true;
+          return true;
+        }
       }
+      return false;
     }
     // It is not bed time anymore or I am not home
     else {
+      // Outside conditions: full reset
+      firstStartTime_state = true;
+      firstStartTime = 0;
+      midStartTime = 0;
+      useTime = 0;
+      elapsedTime = 0;
       unusedTime = 0;
+      alarmTriggered = false;
+      graceActive = false;
+      graceStartTime = 0;
       return false;
     }
-    // Fallback: if execution reaches here for any unexpected reason, return false
-    return false;
   }
 };
 
@@ -165,8 +197,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (topicStr == phone_sensor_state_topic) phoneSensorState = String(message);
   else if (topicStr == bed_time_state_topic) bedTimeState = String(message);
   else if (topicStr == home_state_topic) homeState = String(message);
-  else if (topicStr == use_time_treshold_topic) useTime_treshold = message.toInt();
-  else if (topicStr == unused_time_treshold_topic) unusedTime_treshold = message.toInt();
+  // Handle control/command topics from Home Assistant
+  else if (topicStr == String(use_time_command_topic)) {
+    int minutes = atoi(message.c_str());
+    useTime_treshold = (unsigned long)minutes * 60000UL;
+    client.publish(use_time_state_topic, String(minutes).c_str(), true);
+  }
+  else if (topicStr == String(unused_time_command_topic)) {
+    int minutes = atoi(message.c_str());
+    unusedTime_treshold = (unsigned long)minutes * 60000UL;
+    client.publish(unused_time_state_topic, String(minutes).c_str(), true);
+  }
+  else if (topicStr == String(grace_time_command_topic)) {
+    int seconds = atoi(message.c_str());
+    graceTime_treshold = (unsigned long)seconds * 1000UL;
+    client.publish(grace_time_state_topic, String(seconds).c_str(), true);
+  }
 }
 
 void setup_wifi() {
@@ -240,6 +286,16 @@ void reconnect() {
       client.subscribe(phone_sensor_state_topic);
       Serial.print("Subscribed to: ");
       Serial.println(phone_sensor_state_topic);
+      // Subscribe to control topics so HA can change thresholds
+      client.subscribe(use_time_command_topic);
+      Serial.print("Subscribed to: ");
+      Serial.println(use_time_command_topic);
+      client.subscribe(unused_time_command_topic);
+      Serial.print("Subscribed to: ");
+      Serial.println(unused_time_command_topic);
+      client.subscribe(grace_time_command_topic);
+      Serial.print("Subscribed to: ");
+      Serial.println(grace_time_command_topic);
     } else {
       int rc = client.state();
       Serial.print("MQTT connect failed, rc=");
@@ -287,8 +343,37 @@ void publishDiscoveryConfig() {
   if (!client.publish("homeassistant/sensor/bed_sensor_phone_usage/config", config_phone_usage.c_str(), true)) {
     Serial.println("Failed to publish Phone Usage Sensor discovery.");
   }
-  
+
+  // 6. Phone Warning use time treshold input
+  String config_use_time_treshold = "{\"name\":\"Bed Sensor Phone Use Time Treshold\",\"command_topic\":\"" + String(use_time_command_topic) + "\",\"state_topic\":\"" + String(use_time_state_topic) + "\",\"availability_topic\":\"" + String(availability_topic) + "\",\"min\":0,\"max\":120,\"step\":1,\"unit_of_measurement\":\"min\",\"mode\":\"box\",\"unique_id\":\"bed_sensor_001_use_time_treshold\"," + device_json + "}";
+  if (!client.publish("homeassistant/number/bed_sensor_phone_use_time_treshold/config", config_use_time_treshold.c_str(), true)) {
+    Serial.println("Failed to publish Use Time Treshold discovery.");
+  }
+
+  // 7. Phone Warning unused time treshold input
+  String config_unused_time_treshold = "{\"name\":\"Bed Sensor Phone Unused Time Treshold\",\"command_topic\":\"" + String(unused_time_command_topic) + "\",\"state_topic\":\"" + String(unused_time_state_topic) + "\",\"availability_topic\":\"" + String(availability_topic) + "\",\"min\":0,\"max\":120,\"step\":10,\"unit_of_measurement\":\"min\",\"mode\":\"box\",\"unique_id\":\"bed_sensor_001_unused_time_treshold\"," + device_json + "}";
+  if (!client.publish("homeassistant/number/bed_sensor_phone_unused_time_treshold/config", config_unused_time_treshold.c_str(), true)) {
+    Serial.println("Failed to publish Unused Time Treshold discovery.");
+  }
+
+  // 8. Phone Warning grace time treshold input
+  String config_grace_time_treshold = "{\"name\":\"Bed Sensor Phone Grace Time Treshold\",\"command_topic\":\"" + String(grace_time_command_topic) + "\",\"state_topic\":\"" + String(grace_time_state_topic) + "\",\"availability_topic\":\"" + String(availability_topic) + "\",\"min\":0,\"max\":120,\"step\":5,\"unit_of_measurement\":\"sec\",\"mode\":\"box\",\"unique_id\":\"bed_sensor_001_grace_time_treshold\"," + device_json + "}";
+  if (!client.publish("homeassistant/number/bed_sensor_phone_grace_time_treshold/config", config_grace_time_treshold.c_str(), true)) {
+    Serial.println("Failed to publish Grace Time Treshold discovery.");
+  }
+
   Serial.println("Finished publishing all discovery configs.");
+}
+
+void publishInitialStates() {
+  Serial.println("Publishing initial states...");
+  // Publish initial state for use time threshold (in minutes)
+  client.publish(use_time_state_topic, String(useTime_treshold / 60000).c_str(), true);
+  // Publish initial state for unused time threshold (in minutes)
+  client.publish(unused_time_state_topic, String(unusedTime_treshold / 60000).c_str(), true);
+  // Publish initial state for grace time threshold (in seconds)
+  client.publish(grace_time_state_topic, String(graceTime_treshold / 1000).c_str(), true);
+  Serial.println("Finished publishing initial states.");
 }
 
 void setup() {
@@ -307,16 +392,12 @@ void setup() {
   digitalWrite(LED_BUILTIN_1, HIGH);
   digitalWrite(LED_BUILTIN_2, HIGH);
 
-  // Convert input from the entities with time thresholds, from minutes to milliseconds
-  useTime_treshold *= 60000;
-  unusedTime_treshold *= 60000;
-
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
   
   // Set a larger buffer size for the MQTT client to handle the large discovery payload
-  client.setBufferSize(512);
+  client.setBufferSize(1024);
 
   // Connect to MQTT and publish discovery config
   reconnect();
@@ -330,9 +411,6 @@ void loop() {
   // =============================================================================================================
   // service OTA requests
   ArduinoOTA.handle();
-  // =============================================================================================================
-
-
 
   // VARIABLE UPDATES
   // =============================================================================================================
@@ -342,9 +420,6 @@ void loop() {
   int sensorValue = analogRead(SENSOR_PIN);
   // Determine bed state
   bool bedOccupied = sensorValue <= OCCUPIED_THRESHOLD;
-  // =============================================================================================================
-
-
 
   // MQTT
   // =============================================================================================================
@@ -355,6 +430,7 @@ void loop() {
   // Publish discovery config once after a successful connection
   if (client.connected() && !discovery_published) {
     publishDiscoveryConfig();
+    publishInitialStates(); // Publish initial input states to default values
     discovery_published = true; // Set flag so it doesn't run again
   }
   // Debounce logic
@@ -382,14 +458,12 @@ void loop() {
     // 3. Publish Raw Pressure Value
     client.publish(pressure_state_topic, String(sensorValue).c_str(), true);
     // 4. Publish Phone Usage Time (in minutes)
-    unsigned long useTimeMinutes = useTime / 60000;
+    unsigned long useTimeMinutes = phoneWarningTracker.useTime / 60000;
     client.publish(phone_usage_state_topic, String(useTimeMinutes).c_str(), true);
     
+    // Update last publish time
     lastDataPublishTime = millis();
   }
-  // =============================================================================================================
-
-
 
   // MAIN LOGIC
   // =============================================================================================================
@@ -399,14 +473,15 @@ void loop() {
   } else {
     digitalWrite(GREEN_LIGHT_PIN, LOW);
   }
-  /* // Indicate bed occupancy on built-in LED
-  if (bedOccupied) {
-    digitalWrite(LED_BUILTIN_1, LOW); // LED ON (active LOW)
-  } else {
-    digitalWrite(LED_BUILTIN_1, HIGH);
-  } */
+
   // Check if phone warning conditions are met
-  if (phoneWarningTracker.check(phoneSensorState, bedTimeState, homeState, currentBedState, useTime_treshold, unusedTime_treshold)) {
+  if (phoneWarningTracker.check(phoneSensorState, 
+                                bedTimeState, 
+                                homeState, 
+                                currentBedState, 
+                                useTime_treshold, 
+                                unusedTime_treshold, 
+                                graceTime_treshold)) {
     if (!buzzerRequested) {
       buzzerRequested = true;
       startBuzzerSequence();
@@ -422,5 +497,4 @@ void loop() {
   updateBuzzer();
 
   delay(50);  // determines the frequency of the whole code
-  // =============================================================================================================
 }

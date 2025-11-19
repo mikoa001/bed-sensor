@@ -10,7 +10,7 @@
 // Flag to track if discovery has been published
 bool discovery_published = false;
 
-// MQTT Topics
+// MQTT Topics for this device
 const char* state_topic = "homeassistant/binary_sensor/bed_sensor/state";
 const char* config_topic = "homeassistant/binary_sensor/bed_sensor/config";
 const char* availability_topic = "homeassistant/binary_sensor/bed_sensor/availability";
@@ -18,20 +18,26 @@ const char* rssi_state_topic = "homeassistant/sensor/bed_sensor_rssi/state";
 const char* ip_state_topic = "homeassistant/sensor/bed_sensor_ip/state";
 const char* pressure_state_topic = "homeassistant/sensor/bed_sensor_pressure/state";
 const char* phone_usage_state_topic = "homeassistant/sensor/bed_sensor_phone_usage/state";
+const char* use_time_command_topic = "homeassistant/number/bed_sensor_phone_use_time_treshold/set";
+const char* use_time_state_topic = "homeassistant/number/bed_sensor_phone_use_time_treshold/state";
+const char* unused_time_command_topic = "homeassistant/number/bed_sensor_phone_unused_time_treshold/set";
+const char* unused_time_state_topic = "homeassistant/number/bed_sensor_phone_unused_time_treshold/state";
+const char* grace_time_command_topic = "homeassistant/number/bed_sensor_phone_grace_time_treshold/set";
+const char* grace_time_state_topic = "homeassistant/number/bed_sensor_phone_grace_time_treshold/state";
 
-// Topic for monitoring HA entity state
+
+// MQTT topics for monitoring HA entity states
 const char* phone_sensor_state_topic = "homeassistant/binary_sensor/mikael_sin_mobil_interactive/state";
-const char* bed_time_state_topic = "homeassistant/binary_sensor/bedTimeState";
-const char* home_state_topic = "homeassistant/device_tracker/mikael_sin_mobil";
-const char* use_time_treshold_topic = "homeassistant/input_number/bed_sensor_phone_use_time_treshold";
-const char* unused_time_treshold_topic = "homeassistant/input_number/bed_sensor_phone_unused_time_treshold";
+const char* bed_time_state_topic = "homeassistant/input_boolean/bedTimeState/state";
+const char* home_state_topic = "homeassistant/device_tracker/mikael_sin_mobil/state";
 
 // Initialize the state of the monitored entities
 String phoneSensorState = "OFF";
 String bedTimeState = "OFF";
 String homeState = "NOT_HOME";
-int useTime_treshold = 0;
-int unusedTime_treshold = 0;
+unsigned long useTime_treshold = 15*60*1000; // Default to 15 minutes
+unsigned long unusedTime_treshold = 60*60*1000; // Default to 60 minutes
+unsigned long graceTime_treshold = 30*1000; // Default to 30 seconds
 
 
 // Defining pins
